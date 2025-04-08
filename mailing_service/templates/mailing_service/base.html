@@ -1,0 +1,57 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная "MailingService"</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+</head>
+<body>
+    <!-- Навигационная панель -->
+    {% include 'mailing_service/header.html'%}
+
+    <!-- Основное содержимое -->
+    <main class="container my-5">
+        <!-- Статистика -->
+        <div class="row mb-5">
+            <div class="col-md-4">
+                <div class="stat-card bg-light-yellow">
+                    <div class="stat-value">1,248</div>
+                    <div class="stat-label">Всего рассылок</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card bg-light-mint">
+                    <div class="stat-value">328</div>
+                    <div class="stat-label">Активные ("Запущена")</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card bg-light-yellow">
+                    <div class="stat-value">5,742</div>
+                    <div class="stat-label">Уникальных пользователей</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Дополнительный контент -->
+        <div class="row">
+            <div class="col-12">
+                <h2 class="mb-4">Добро пожаловать в MailingService</h2>
+                <p>Здесь вы можете управлять своими email-рассылками, отслеживать статистику и анализировать эффективность кампаний.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Подвал -->
+    <footer class="py-5 text-dark">
+        {% include 'mailing_service/footer.html'%}
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle with Popper -->
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>
