@@ -1,0 +1,33 @@
+{% extends 'mailing_service/base.html' %}
+{% load my_tags %}
+
+{% block content %}
+<div class="album py-5 bg-body-tertiary">
+    <div class="container">
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+            {% for mailing in object_list %}
+            <div class="col">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <p class="card-text">{{ mailing.status }}</p>
+                        <p class="card-text">{{ mailing.message}}</p>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="btn-group">
+                                <a class="btn btn-primary" href="{% url 'mailing_service:mailing_detail' mailing.pk %}" role="button">Посмотреть</a>
+                                <a class="btn btn-secondary" href="{% url 'mailing_service:mailing_update' mailing.pk %}" role="button">Редактировать</a>
+                                <a class="btn btn-danger" href="{% url 'mailing_service:mailing_delete' mailing.pk %}" role="button">Удалить</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col">
+                <p>Список рассылок пуст.{{ object_list|length }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
