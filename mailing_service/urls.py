@@ -1,9 +1,11 @@
 from django.urls import path
+from mypy.types import names
 
 from .views import base
 from mailing_service.apps import MailingServiceConfig
 from .views import RecipientCreateView, RecipientListView, RecipientDetailView, RecipientUpdateView, RecipientDeleteView
-
+from .views import MessageCreateView, MessageListView, MessageDetailView, MessageUpdateView, MessageDeleteView
+from .views import MailingCreateView, MailingListView, MailingDetailView, MailingUpdateView, MailingDeleteView
 app_name = MailingServiceConfig.name
 
 urlpatterns =[
@@ -12,6 +14,17 @@ urlpatterns =[
     path("recipients/new/", RecipientCreateView.as_view(), name="recipient_create"),
     path("recipients/<int:pk>/", RecipientDetailView.as_view(), name="recipient_detail"),
     path("recipients/<int:pk>/update/", RecipientUpdateView.as_view(), name="recipient_update"),
-    path("recipients/<int:pk>/delete/", RecipientDeleteView.as_view(), name="recipient_delete")
+    path("recipients/<int:pk>/delete/", RecipientDeleteView.as_view(), name="recipient_delete"),
 
+    path("messages/", MessageListView.as_view(), name="message_list"),
+    path("messages/new/", MessageCreateView.as_view(), name="message_create"),
+    path("messages/<int:pk>/", MessageDetailView.as_view(), name="message_detail"),
+    path("messages/<int:pk>/update", MessageUpdateView.as_view(), name="message_update"),
+    path("messages/<int:pk>/delete/", MessageDeleteView.as_view(), name="message_delete"),
+
+    path("mailings/", MailingListView.as_view(), name="mailing_list"),
+    path("mailings/new/", MailingCreateView.as_view(), name="mailing_create"),
+    path("mailing/<int:pk>/", MailingDetailView.as_view(), name="mailing_detail"),
+    path("mailings/<int:pk>/update/", MailingUpdateView.as_view(), name="mailing_update"),
+    path("mailing/<int:pk>/delete/", MailingDeleteView.as_view(), name="mailing_detele"),
 ]
