@@ -78,3 +78,41 @@ footer {
     background: linear-gradient(135deg, var(--mint-color) 0%, var(--yellow-color) 100%) !important;
     padding: 2rem 0 !important;
 }
+/* Мятный цвет (для кнопки "Посмотреть") */
+.btn-mint {
+    background-color: #98FF98;  /* яркий мятный */
+    border-color: #98FF98;
+    color: #000;  /* чёрный текст для контраста */
+}
+.btn-mint:hover {
+    background-color: #7AE07A;  /* чуть темнее при наведении */
+    border-color: #7AE07A;
+}
+
+/* Лимонный цвет (для кнопки "Редактировать") */
+.btn-lemon {
+    background-color: #FFFACD;  /* светлый лимонный */
+    border-color: #FFFACD;
+    color: #000;
+}
+.btn-lemon:hover {
+    background-color: #FFEE99;  /* ярче при наведении */
+    border-color: #FFEE99;
+}
+
+/* Бледно-голубой (для кнопки "Удалить") */
+.btn-pale-blue {
+    background-color: #B0E0E6;  /* классический бледно-голубой */
+    border-color: #B0E0E6;
+    color: #000;
+}
+.btn-pale-blue:hover {
+    background-color: #9BC4D2;  /* чуть темнее при наведении */
+    border-color: #9BC4D2;
+}
+.btn-mint:hover, .btn-lemon:hover, .btn-pale-blue:hover {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+.btn-mint, .btn-lemon, .btn-pale-blue {
+    transition: all 0.3s ease;
+}
