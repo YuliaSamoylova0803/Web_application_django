@@ -1,4 +1,4 @@
-{% extends 'mailing_service/message_list.html' %}
+{% extends 'mailing_service/mailing_list.html' %}
 {% load my_tags %}
 
 {% block content %}
@@ -19,6 +19,9 @@
                             <div class="btn-group">
                                 <a class="btn btn-primary" href="{% url 'mailing_service:mailing_list' %}"
                                    role="button">Назад</a>
+                                <a href="{% url 'mailing_service:send_mailing' object.pk %}" class="btn btn-success">
+                                    Отправить сейчас
+                                </a>
                             </div>
                         </div>
 
