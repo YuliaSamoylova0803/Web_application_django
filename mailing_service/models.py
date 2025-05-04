@@ -17,6 +17,8 @@ class Recipient(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
 
+    token = models.CharField(max_length=100, verbose_name="Token", blank=True, null=True)
+
     class Meta:
         verbose_name = "получатель"
         verbose_name_plural = "получатели"
@@ -96,6 +98,39 @@ class Mailing(models.Model):
 
     def __str__(self):
         return f"Рассылка #{self.id} ({self.get_status_display() or 'Без статуса'})"
+
+
+    def send(self):
+        from django.core.mail import send_mail
+        from django.conf import settings
+
+        for recipient in self.recipients.all():
+            try:
+                send_mail(
+                    subject=self.message.subject_message,
+                    message=self.message.message_body,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[recipient.email],
+                    fail_silently=False,
+                )
+
+                MailingLog.objects.create(
+                    mailing=self,
+                    recipient=recipient,
+                    status=MailingLog.STATUS_SUCCESS,
+                    mail_server_response="Успешно отправлено",
+                )
+
+            except Exception as e:
+                MailingLog.objects.create(
+                    mailing=self,
+                    recipient=recipient,
+                    status=MailingLog.STATUS_FAILED,
+                    mail_server_response=str(e),
+                )
+
+        self.status = self.STATUS_LAUNCHED
+        self.save()
 
 
 class MailingLog(models.Model):
