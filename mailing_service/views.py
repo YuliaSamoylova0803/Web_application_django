@@ -1,6 +1,9 @@
-from django.shortcuts import render
+from django.conf import settings
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.checks import messages
+from django.shortcuts import render, redirect
 from django.urls import reverse_lazy, reverse
-
+from django.core.mail import send_mail
 from .models import Recipient, Message, Mailing, MailingLog
 from django.views.generic import ListView, DetailView, DeleteView
 from django.views.generic.edit import CreateView, UpdateView
@@ -98,11 +101,15 @@ class MessageDeleteView(DeleteView):
     success_url = reverse_lazy("mailing_service:message_list.html")
 
 
-class MailingListView(ListView):
+class MailingListView(LoginRequiredMixin, ListView):
     model = Mailing
+    paginate_by = 10
+
+    def get_queryset(self):
+        return super().get_queryset().filter(is_active=True)
 
 
-class MailingDetailView(DeleteView):
+class MailingDetailView(DetailView):
     model = Mailing
 
 
@@ -133,6 +140,86 @@ class MailingUpdateView(UpdateView):
         return reverse("mailing_service:mailing_detail", args=[self.kwargs.get("pk")])
 
 
-class MailingDeleteView(DeleteView):
+class MailingDeleteView(LoginRequiredMixin, DeleteView):
     model = Mailing
-    success_url = reverse_lazy("mailing_service:mailing_list.html")
+    success_url = reverse_lazy("mailing_service:mailing_list")  # Убрал .html
+
+    def form_valid(self, form):
+        messages.success(self.request, "Рассылка успешно удалена")
+        return super().form_valid(form)
+
+
+class MailingLogListView(ListView):
+    model = MailingLog
+
+
+class MailingLogDetailView(DetailView):
+    model = MailingLog
+
+
+class MailingLogCreateView(CreateView):
+    model = MailingLog
+    fields = ["mailing", "recipient", "status", "date_of_attempt"]
+    template_name = "mailing_service/mailing_log_form.html"
+    success_url = reverse_lazy("mailing_service:mailing_log_list")
+
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        response = super().form_invalid(form)
+        response.context_data["error_message"] = "Please correct the errors below"
+
+        return response
+
+
+class MailingLogUpdateView(UpdateView):
+    model = MailingLog
+    fields = ["mailing", "recipient", "status", "date_of_attempt"]
+    template_name = "mailing_service/mailing_log_form.html"
+    success_url = reverse_lazy("mailing_service:mailing_log_list")
+
+    def get_success_url(self):
+        return reverse("mailing_service:mailing_log_detail", args=[self.kwargs.get("pk")])
+
+
+class MailingLogDeleteView(DeleteView):
+    model = MailingLog
+    success_url = reverse_lazy("mailing_service:mailing_log_list.html")
+
+
+def send_mailing(request, mailing_id):
+    mailing = Mailing.objects.get(pk=mailing_id)
+    recipients = mailing.recipients.all()
+    message = mailing.message
+
+    for recipient in recipients:
+        try:
+            # Отправка email
+            send_mail(
+                subject=message.subject_message,
+                message=message.message_body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[recipient.email],
+                fail_silently=False,
+            )
+
+            # Логирование успешной отправки
+            MailingLog.objects.create(
+                mailing=mailing,
+                recipient=recipient,
+                status=MailingLog.STATUS_SUCCESS,
+                mail_server_response="Успешно отправлено",
+            )
+
+        except Exception as e:
+            # Логирование ошибки
+            MailingLog.objects.create(
+                mailing=mailing,
+                recipient=recipient,
+                status=MailingLog.STATUS_FAILED,
+                mail_server_response=str(e),
+            )
+
+    return redirect('mailing_service:mailing_detail', pk=mailing_id)
