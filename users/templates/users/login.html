@@ -1,0 +1,28 @@
+{% extends 'mailing_service/base.html' %}
+{% load my_tags %}
+
+{% block title%}Login{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+
+    <div class="row mb-5">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5>Вход на сайт</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit" class="btn btn-primary">Войти</button>
+                        <a class="btn btn-danger" href="{% url 'mailing_service:base' %}" role="button">Не
+                            авториризоваться</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
