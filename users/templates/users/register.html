@@ -1,7 +1,7 @@
 {% extends 'mailing_service/base.html' %}
 {% load my_tags %}
 
-{% block title%}Login{% endblock %}
+{% block title%}Регистрация{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
@@ -9,20 +9,20 @@
     <div class="row mb-5">
         <div class="col-md-6 offset-md-3">
             <div class="card">
-                <div class="card-header btn btn-mint text-white">
-                    <h5>Вход на сайт</h5>
+                <div class="card-header btn-mint text-white">
+                    <h5>Регистрация в MailingService</h5>
                 </div>
                 <div class="card-body">
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{ form.as_p }}
-                        <button type="submit" class="btn btn btn-mint">Войти</button>
-                        <a class="btn btn-outline-dark me-2" href="{% url 'mailing_service:base' %}" role="button">Не
-                            авториризоваться</a>
+                        <button type="submit" class="btn btn-mint">Регистрация</button>
+
                     </form>
                 </div>
             </div>
         </div>
     </div>
 
-{% endblock %}
+
+    {% endblock %}
