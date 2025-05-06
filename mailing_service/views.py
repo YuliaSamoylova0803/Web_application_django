@@ -31,7 +31,10 @@ class RecipientCreateView(CreateView):
     success_url = reverse_lazy("mailing_service:recipient_list")
 
     def form_valid(self, form):
-        form.instance.created_by = self.request.user
+        recipient = form.save()
+        user = self.request.user
+        recipient.owner = user
+        recipient.save()
         return super().form_valid(form)
 
     def form_invalid(self, form):
@@ -80,7 +83,10 @@ class MessageCreateView(CreateView):
     success_url = reverse_lazy("mailing_service:message_list")
 
     def form_valid(self, form):
-        form.instance.created_by = self.request.user
+        message = form.save()
+        user = self.request.user
+        message.owner = user
+        message.save()
         return super().form_valid(form)
 
     def form_invalid(self, form):
@@ -123,7 +129,10 @@ class MailingCreateView(CreateView):
     success_url = reverse_lazy("mailing_service:mailing_list")
 
     def form_valid(self, form):
-        form.instance.created_by = self.request.user
+        mailing = form.save()
+        user = self.request.user
+        mailing.owner = user
+        mailing.save()
         return super().form_valid(form)
 
     def form_invalid(self, form):
