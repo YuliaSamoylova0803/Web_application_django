@@ -3,6 +3,8 @@ from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.conf import settings
 from django.db.models import CASCADE
 
+from users.models import User
+
 
 # Create your models here.
 class Recipient(models.Model):
@@ -17,7 +19,7 @@ class Recipient(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
 
-    token = models.CharField(max_length=100, verbose_name="Token", blank=True, null=True)
+    owner = models.ForeignKey(User, verbose_name="Владелец", blank=True, null=True, on_delete=models.SET_NULL)
 
     class Meta:
         verbose_name = "получатель"
@@ -47,6 +49,8 @@ class Message(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
     attachment = models.FileField(upload_to="message_attachments/%Y/%m/%d/", verbose_name="Вложение", blank=True,
                                   null=True, )
+
+    owner = models.ForeignKey(User, verbose_name="Владелец", help_text="Укажите владельца сообщения", blank=True, null=True, on_delete=models.SET_NULL)
 
     class Meta:
         verbose_name = "сообщение"
@@ -85,6 +89,9 @@ class Mailing(models.Model):
     recipients = models.ManyToManyField(Recipient, verbose_name="Получатели")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     is_active = models.BooleanField(default=True, verbose_name="Активна", help_text="Указывает, активна ли рассылка")
+
+    owner = models.ForeignKey(User, verbose_name="Владелец", help_text="Укажите владельца рассылки", blank=True,
+                              null=True, on_delete=models.SET_NULL)
 
     class Meta:
         verbose_name = "рассылка"
