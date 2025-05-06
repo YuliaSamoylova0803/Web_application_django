@@ -7,6 +7,8 @@ from django.core.mail import send_mail
 from .models import Recipient, Message, Mailing, MailingLog
 from django.views.generic import ListView, DetailView, DeleteView
 from django.views.generic.edit import CreateView, UpdateView
+from .forms import RecipientForm, MessageForm, MailingForm, MailingLogForm
+
 
 # Create your views here.
 def base(request):
@@ -19,11 +21,12 @@ class RecipientListView(ListView):
     model = Recipient
 
 
+
 # app_name/<model_name>_action
 # mailing_service/recipient_create
 class RecipientCreateView(CreateView):
     model = Recipient
-    fields = ["full_name", "email", "comment"]
+    forms_class = RecipientForm
     template_name = "mailing_service/recipient_form.html"
     success_url = reverse_lazy("mailing_service:recipient_list")
 
@@ -47,7 +50,7 @@ class RecipientDetailView(DetailView):
 # mailing_service/recipient_update
 class RecipientUpdateView(UpdateView):
     model = Recipient
-    fields = ["full_name", "email", "comment"]
+    forms_class = RecipientForm
     template_name = "mailing_service/recipient_form.html"
     success_url = reverse_lazy("mailing_service:recipient_list")
 
@@ -72,7 +75,7 @@ class MessageDetailView(DetailView):
 
 class MessageCreateView(CreateView):
     model = Message
-    fields = ["subject_message", "message_body", "attachment"]
+    forms_class = MessageForm
     template_name = "mailing_service/message_form.html"
     success_url = reverse_lazy("mailing_service:message_list")
 
@@ -88,7 +91,7 @@ class MessageCreateView(CreateView):
 
 class MessageUpdateView(UpdateView):
     model = Message
-    fields = ["subject_message", "message_body", "attachment"]
+    forms_class = MessageForm
     template_name = "mailing_service/message_form.html"
     success_url = reverse_lazy("mailing_service:message_list")
 
@@ -115,7 +118,7 @@ class MailingDetailView(DetailView):
 
 class MailingCreateView(CreateView):
     model = Mailing
-    fields = ["message", "status", "is_active", "first_shipment", "end_shipment", "recipients"]
+    forms_class = MailingForm
     template_name = "mailing_service/mailing_form.html"
     success_url = reverse_lazy("mailing_service:mailing_list")
 
@@ -132,7 +135,7 @@ class MailingCreateView(CreateView):
 
 class MailingUpdateView(UpdateView):
     model = Mailing
-    fields = ["message", "status", "is_active", "first_shipment", "end_shipment", "recipients"]
+    forms_class = MailingForm
     template_name = "mailing_service/mailing_form.html"
     success_url = reverse_lazy("mailing_service:mailing_list")
 
@@ -159,7 +162,7 @@ class MailingLogDetailView(DetailView):
 
 class MailingLogCreateView(CreateView):
     model = MailingLog
-    fields = ["mailing", "recipient", "status", "date_of_attempt"]
+    forms_class = MailingLogForm
     template_name = "mailing_service/mailing_log_form.html"
     success_url = reverse_lazy("mailing_service:mailing_log_list")
 
@@ -176,7 +179,7 @@ class MailingLogCreateView(CreateView):
 
 class MailingLogUpdateView(UpdateView):
     model = MailingLog
-    fields = ["mailing", "recipient", "status", "date_of_attempt"]
+    forms_class = MailingLogForm
     template_name = "mailing_service/mailing_log_form.html"
     success_url = reverse_lazy("mailing_service:mailing_log_list")
 
