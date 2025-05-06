@@ -26,7 +26,7 @@ class RecipientListView(ListView):
 # mailing_service/recipient_create
 class RecipientCreateView(CreateView):
     model = Recipient
-    forms_class = RecipientForm
+    form_class = RecipientForm
     template_name = "mailing_service/recipient_form.html"
     success_url = reverse_lazy("mailing_service:recipient_list")
 
@@ -50,7 +50,7 @@ class RecipientDetailView(DetailView):
 # mailing_service/recipient_update
 class RecipientUpdateView(UpdateView):
     model = Recipient
-    forms_class = RecipientForm
+    form_class = RecipientForm
     template_name = "mailing_service/recipient_form.html"
     success_url = reverse_lazy("mailing_service:recipient_list")
 
@@ -75,7 +75,7 @@ class MessageDetailView(DetailView):
 
 class MessageCreateView(CreateView):
     model = Message
-    forms_class = MessageForm
+    form_class = MessageForm
     template_name = "mailing_service/message_form.html"
     success_url = reverse_lazy("mailing_service:message_list")
 
@@ -91,7 +91,7 @@ class MessageCreateView(CreateView):
 
 class MessageUpdateView(UpdateView):
     model = Message
-    forms_class = MessageForm
+    form_class = MessageForm
     template_name = "mailing_service/message_form.html"
     success_url = reverse_lazy("mailing_service:message_list")
 
@@ -118,7 +118,7 @@ class MailingDetailView(DetailView):
 
 class MailingCreateView(CreateView):
     model = Mailing
-    forms_class = MailingForm
+    form_class = MailingForm
     template_name = "mailing_service/mailing_form.html"
     success_url = reverse_lazy("mailing_service:mailing_list")
 
@@ -135,7 +135,7 @@ class MailingCreateView(CreateView):
 
 class MailingUpdateView(UpdateView):
     model = Mailing
-    forms_class = MailingForm
+    form_class = MailingForm
     template_name = "mailing_service/mailing_form.html"
     success_url = reverse_lazy("mailing_service:mailing_list")
 
@@ -162,7 +162,7 @@ class MailingLogDetailView(DetailView):
 
 class MailingLogCreateView(CreateView):
     model = MailingLog
-    forms_class = MailingLogForm
+    form_class = MailingLogForm
     template_name = "mailing_service/mailing_log_form.html"
     success_url = reverse_lazy("mailing_service:mailing_log_list")
 
@@ -179,7 +179,7 @@ class MailingLogCreateView(CreateView):
 
 class MailingLogUpdateView(UpdateView):
     model = MailingLog
-    forms_class = MailingLogForm
+    form_class = MailingLogForm
     template_name = "mailing_service/mailing_log_form.html"
     success_url = reverse_lazy("mailing_service:mailing_log_list")
 
