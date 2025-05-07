@@ -16,3 +16,5 @@ class Command(BaseCommand):
         for mailing in mailings:
             self.stdout.write(f"Sending mailing #{mailing.id}")
             mailing.send()
+
+        self.stdout.write(self.style.SUCCESS('Successfully sent mailings'))
