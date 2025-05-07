@@ -1,10 +1,11 @@
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView, LogoutView, PasswordResetView, PasswordResetDoneView, \
     PasswordResetConfirmView, PasswordResetCompleteView
 from django.urls import path, reverse_lazy
 import uuid
 
 from users.apps import UsersConfig
-from users.views import RegisterView, email_verification
+from users.views import RegisterView, email_verification, edit_profile
 
 app_name = UsersConfig.name
 
@@ -46,4 +47,5 @@ urlpatterns =[
         PasswordResetCompleteView.as_view(template_name="users/password_reset_complete.html"),
         name="password_reset_complete"
     ),
+    path("edit_profile/", login_required(edit_profile), name="edit_profile"),
 ]
