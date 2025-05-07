@@ -1,3 +1,5 @@
+from email.message import EmailMessage
+
 from django.db import models
 from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.conf import settings
@@ -113,13 +115,16 @@ class Mailing(models.Model):
 
         for recipient in self.recipients.all():
             try:
-                send_mail(
+                email= EmailMessage(
                     subject=self.message.subject_message,
-                    message=self.message.message_body,
+                    body=self.message.message_body,
                     from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[recipient.email],
-                    fail_silently=False,
+                    to=[recipient.email],
                 )
+                if self.message.attachment:
+                    email.attach_file(self.message.attachment.path)
+
+                email.send()
 
                 MailingLog.objects.create(
                     mailing=self,
