@@ -29,10 +29,27 @@ class UserRegisterForm(StyleFormMixin, UserCreationForm):
 
     class Meta:
         model = User
-        fields = ("avatar", "email", "phone_number")
+        fields = ("avatar", "email", "phone")
 
     def clean_phone_number(self):
         phone_number = self.cleaned_data.get("phone_number")
         if phone_number and not phone_number.isdigit():
             raise forms.ValidationError("Номер телефона должен состоять только из цифр")
         return phone_number
+
+
+class UserEditForm(StyleFormMixin, forms.ModelForm):
+    class Meta:
+         model = User
+         fields = ("email", "phone", "avatar", "country")
+         widgets = {
+             'email': forms.EmailInput(attrs={'class': 'form-control'}),
+             'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
+             'country': forms.TextInput(attrs={'class': 'form-control'}),
+         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["avatar"].widget.attrs.update({"class": "form-control-file"})
+        self.fields["phone"].widget.attrs.update({"class": "form-control-file"})
+        self.fields["email"].disabled = True
