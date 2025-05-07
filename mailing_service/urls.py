@@ -7,12 +7,12 @@ from .views import RecipientCreateView, RecipientListView, RecipientDetailView, 
 from .views import MessageCreateView, MessageListView, MessageDetailView, MessageUpdateView, MessageDeleteView
 from .views import MailingCreateView, MailingListView, MailingDetailView, MailingUpdateView, MailingDeleteView
 from .views import MailingLogCreateView, MailingLogListView, MailingLogDetailView, MailingLogUpdateView, MailingLogDeleteView
-from .views import send_mailing
+from .views import send_mailing, BaseView
 
 app_name = MailingServiceConfig.name
 
 urlpatterns =[
-    path("", base, name="base"),  # надо поменять на home
+    path("", BaseView.as_view(), name="base"),  # надо поменять на home
     path("recipients/", RecipientListView.as_view(), name="recipient_list"),
     path("recipients/new/", RecipientCreateView.as_view(), name="recipient_create"),
     path("recipients/<int:pk>/", RecipientDetailView.as_view(), name="recipient_detail"),
