@@ -1,18 +1,41 @@
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.checks import messages
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.core.mail import send_mail
 from .models import Recipient, Message, Mailing, MailingLog
-from django.views.generic import ListView, DetailView, DeleteView
+from django.views.generic import ListView, DetailView, DeleteView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView
 from .forms import RecipientForm, MessageForm, MailingForm, MailingLogForm
-
+from django.db.models import Count
 
 # Create your views here.
 def base(request):
     return render(request, 'mailing_service/base.html')
+
+
+class BaseView(TemplateView):
+    template_name = "mailing_service/base.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Общее количество рассылок
+        total_mailings = Mailing.objects.count()
+
+        # Количество активных рассылок
+        active_mailings = Mailing.objects.filter(status=Mailing.STATUS_LAUNCHED).count()
+
+        # Количество уникальных получателей
+        unique_recipients = Recipient.objects.distinct().count()
+
+        context.update({
+            'total_mailings': total_mailings,
+            'active_mailings': active_mailings,
+            'unique_recipients': unique_recipients,
+        })
+        return context
 
 
 # app_name/<model_name>_action
@@ -121,6 +144,11 @@ class MailingListView(LoginRequiredMixin, ListView):
 class MailingDetailView(DetailView):
     model = Mailing
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['logs'] = MailingLog.objects.filter(mailing=self.object)
+        return context
+
 
 class MailingCreateView(CreateView):
     model = Mailing
@@ -202,36 +230,13 @@ class MailingLogDeleteView(DeleteView):
 
 
 def send_mailing(request, mailing_id):
-    mailing = Mailing.objects.get(pk=mailing_id)
-    recipients = mailing.recipients.all()
-    message = mailing.message
+    mailing = get_object_or_404(Mailing, pk=mailing_id)
 
-    for recipient in recipients:
+    if request.method == 'POST':
         try:
-            # Отправка email
-            send_mail(
-                subject=message.subject_message,
-                message=message.message_body,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[recipient.email],
-                fail_silently=False,
-            )
-
-            # Логирование успешной отправки
-            MailingLog.objects.create(
-                mailing=mailing,
-                recipient=recipient,
-                status=MailingLog.STATUS_SUCCESS,
-                mail_server_response="Успешно отправлено",
-            )
-
+            mailing.send()
+            messages.success(request, 'Рассылка успешно запущена')
         except Exception as e:
-            # Логирование ошибки
-            MailingLog.objects.create(
-                mailing=mailing,
-                recipient=recipient,
-                status=MailingLog.STATUS_FAILED,
-                mail_server_response=str(e),
-            )
+            messages.error(request, f'Ошибка при отправке рассылки: {str(e)}')
 
     return redirect('mailing_service:mailing_detail', pk=mailing_id)
