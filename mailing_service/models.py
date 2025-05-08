@@ -21,7 +21,7 @@ class Recipient(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
 
-    owner = models.ForeignKey(User, verbose_name="Владелец", blank=True, null=True, on_delete=models.SET_NULL)
+    owner = models.ForeignKey(User, verbose_name="Владелец", blank=True, null=True, on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = "получатель"
@@ -30,6 +30,11 @@ class Recipient(models.Model):
         indexes = [
             models.Index(fields=["email"]),
             models.Index(fields=["full_name"]),
+        ]
+        permissions = [
+            ("can_view_own_recipient", "Can view own recipients"),
+            ("can_change_own_recipient", "Can change own recipients"),
+            ("can_delete_own_recipient", "Can delete own recipients"),
         ]
 
     def __str__(self):
@@ -52,7 +57,7 @@ class Message(models.Model):
     attachment = models.FileField(upload_to="message_attachments/%Y/%m/%d/", verbose_name="Вложение", blank=True,
                                   null=True, )
 
-    owner = models.ForeignKey(User, verbose_name="Владелец", help_text="Укажите владельца сообщения", blank=True, null=True, on_delete=models.SET_NULL)
+    owner = models.ForeignKey(User, verbose_name="Владелец", help_text="Укажите владельца сообщения", blank=True, null=True, on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = "сообщение"
@@ -60,6 +65,11 @@ class Message(models.Model):
         ordering = ["-created_at", "subject_message"]
         indexes = [
             models.Index(fields=["subject_message"]),
+        ]
+        permissions = [
+            ("can_view_own_message", "Can view own messages"),
+            ("can_change_own_message", "Can change own messages"),
+            ("can_delete_own_messages", "Can delete own messages"),
         ]
 
     def __str__(self):
@@ -93,7 +103,7 @@ class Mailing(models.Model):
     is_active = models.BooleanField(default=True, verbose_name="Активна", help_text="Указывает, активна ли рассылка")
 
     owner = models.ForeignKey(User, verbose_name="Владелец", help_text="Укажите владельца рассылки", blank=True,
-                              null=True, on_delete=models.SET_NULL)
+                              null=True, on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = "рассылка"
@@ -103,6 +113,12 @@ class Mailing(models.Model):
             models.Index(fields=["status"]),
             models.Index(fields=["first_shipment"]),
             models.Index(fields=["is_active"]),
+        ]
+        permissions = [
+            ("can_view_own_mailing", "Can view own mailings"),
+            ("can_change_own_mailing", "Can change own mailings"),
+            ("can_delete_own_mailing", "Can delete own mailings"),
+            ("can_start_own_mailing", "Can start own mailings"),
         ]
 
     def __str__(self):
