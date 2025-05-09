@@ -9,11 +9,11 @@
             MailingService
         </a>
         <div class="navbar-nav">
-            <a class="nav-link active" href="#">Главная</a>
-            <a class="nav-link" href="#">Рассылки</a>
-            <a class="nav-link" href="{% url 'mailing_service:recipient_list' %}">Пользователи</a>
+            <a class="nav-link active" href="{% url 'mailing_service:base' %}">Главная</a>
+            <a class="nav-link" href="{% url 'mailing_service:mailing_list' %}">Рассылки</a>
+            <a class="nav-link" href="{% url 'mailing_service:recipient_list' %}">Получатели</a>
             <a class="nav-link" href="{% url 'mailing_service:message_list' %}">Сообщения</a>
-            <a class="nav-link" href="#">Настройки</a>
+            <a class="nav-link" href="#">Статистика</a>
         </div>
         <div class="navbar-nav ms-auto">
             {% if user.is_authenticated %}

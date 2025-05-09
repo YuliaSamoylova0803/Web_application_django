@@ -54,9 +54,9 @@
 
                         {% if object.status != object.STATUS_COMPLETED %}
                         <div class="mb-4 text-center">
-                            <form method="post" action="{% url 'mailing_service:send_mailing' pk=object.pk %}">
+                            <form method="post" action="{% url 'mailing_service:send_mailing' mailing_id=object.pk %}">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-lg btn-primary">Отправить сейчас</button>
+                                <button type="submit" class="btn btn-lg btn-mint">Отправить сейчас</button>
                             </form>
                         </div>
                         {% endif %}
@@ -97,13 +97,13 @@
 
                         <div class="d-flex justify-content-between mt-4">
                             <a href="{% url 'mailing_service:mailing_list' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left"></i> Назад к списку
+                                <i class="bi btn-outline-dark me-2"></i> Назад к списку
                             </a>
                             <div class="btn-group">
-                                <a href="{% url 'mailing_service:mailing_update' object.pk %}" class="btn btn-outline-primary">
+                                <a href="{% url 'mailing_service:mailing_update' pk=object.pk  %}" class="btn btn-mint">
                                     <i class="bi bi-pencil"></i> Редактировать
                                 </a>
-                                <a href="{% url 'mailing_service:mailing_delete' object.pk %}" class="btn btn-outline-danger">
+                                <a href="{% url 'mailing_service:mailing_delete' pk=object.pk  %}" class="btn btn-outline-danger">
                                     <i class="bi bi-trash"></i> Удалить
                                 </a>
                             </div>

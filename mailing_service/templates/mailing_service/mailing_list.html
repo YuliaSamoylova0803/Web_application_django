@@ -9,22 +9,37 @@
             <div class="col">
                 <div class="card shadow-sm">
                     <div class="card-body">
-                        <p class="card-text">{{ mailing.status }}</p>
-                        <p class="card-text">{{ mailing.message}}</p>
-
+                        <h3 class="card-title">{{ mailing }}</h3>
+                        <p class="card-text">Статус: {{ mailing.get_status_display }}</p>
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="btn-group">
-                                <a class="btn btn-primary" href="{% url 'mailing_service:mailing_detail' mailing.pk %}" role="button">Посмотреть</a>
-                                <a class="btn btn-secondary" href="{% url 'mailing_service:mailing_update' mailing.pk %}" role="button">Редактировать</a>
-                                <a class="btn btn-danger" href="{% url 'mailing_service:mailing_delete' mailing.pk %}" role="button">Удалить</a>
+                                {% if perms.mailing.can_change_own_mailing and mailing.owner == request.user %}
+                                <a href="{% url 'mailing_service:mailing_update' mailing.pk %}"
+                                   class="btn btn-sm btn-mint">Редактировать</a>
+                                {% endif %}
+
+                                {% if perms.mailing.can_delete_own_mailing and mailing.owner == request.user %}
+                                <a href="{% url 'mailing_service:mailing_delete' mailing.pk %}"
+                                   class="btn btn-sm btn-outline-danger">Удалить</a>
+                                {% endif %}
+
+                                {% if perms.mailing.can_start_own_mailing and mailing.owner == request.user and mailing.status != mailing.STATUS_LAUNCHED %}
+                                <form method="post" action="{% url 'mailing_service:send_mailing' mailing.pk %}"
+                                      style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Запустить</button>
+                                </form>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             {% empty %}
-            <div class="col">
-                <p>Список рассылок пуст.{{ object_list|length }}</p>
+            <div class="col-12">
+                <div class="alert alert-info" role="alert">
+                    У вас нет рассылок
+                </div>
             </div>
             {% endfor %}
         </div>
