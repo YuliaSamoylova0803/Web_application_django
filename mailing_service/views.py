@@ -1,6 +1,6 @@
 from django.conf import settings
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.checks import messages
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.core.mail import send_mail
@@ -9,6 +9,7 @@ from django.views.generic import ListView, DetailView, DeleteView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView
 from .forms import RecipientForm, MessageForm, MailingForm, MailingLogForm
 from django.db.models import Count
+from django.core.exceptions import PermissionDenied
 
 # Create your views here.
 def base(request):
@@ -40,24 +41,24 @@ class BaseView(TemplateView):
 
 # app_name/<model_name>_action
 # mailing_service/recipient_list
-class RecipientListView(ListView):
+class RecipientListView(LoginRequiredMixin, ListView):
     model = Recipient
+    template_name = "mailing_service/recipient_list.html"
 
-
+    def get_queryset(self):
+        return Recipient.objects.filter(owner=self.request.user)
 
 # app_name/<model_name>_action
 # mailing_service/recipient_create
-class RecipientCreateView(CreateView):
+class RecipientCreateView(LoginRequiredMixin, CreateView):
     model = Recipient
     form_class = RecipientForm
     template_name = "mailing_service/recipient_form.html"
     success_url = reverse_lazy("mailing_service:recipient_list")
 
     def form_valid(self, form):
-        recipient = form.save()
-        user = self.request.user
-        recipient.owner = user
-        recipient.save()
+        form.instance.owner = self.request.user
+        messages.success(self.request, "Получатель успешно создан")
         return super().form_valid(form)
 
     def form_invalid(self, form):
@@ -74,22 +75,33 @@ class RecipientDetailView(DetailView):
 
 # app_name/<model_name>_action
 # mailing_service/recipient_update
-class RecipientUpdateView(UpdateView):
+class RecipientUpdateView(PermissionRequiredMixin, UpdateView):
     model = Recipient
     form_class = RecipientForm
     template_name = "mailing_service/recipient_form.html"
     success_url = reverse_lazy("mailing_service:recipient_list")
 
+    def get_queryset(self):
+        return Recipient.objects.filter(owner=self.request.user)
+
     def get_success_url(self):
+        messages.success(self.request, "Получатель успешно обновлен")
         return reverse("mailing_service:recipient_detail", args=[self.kwargs.get("pk")])
 
 
 # app_name/<model_name>_action
 # mailing_service/recipient_delete
-class RecipientDeleteView(DeleteView):
+class RecipientDeleteView(PermissionRequiredMixin, DeleteView):
     model = Recipient
     success_url = reverse_lazy("mailing_service:recipient_list")
+    permission_required = "mailing.can_delete_own_recipient"
 
+    def get_queryset(self):
+        return Recipient.objects.filter(owner=self.request.user)
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Получатель успешно удален")
+        return super().delete(request, *args, **kwargs)
 
 class MessageListView(ListView):
     model = Message
@@ -135,10 +147,12 @@ class MessageDeleteView(DeleteView):
 
 class MailingListView(LoginRequiredMixin, ListView):
     model = Mailing
+    template_name = "mailings/mailing_list.html"
     paginate_by = 10
 
+
     def get_queryset(self):
-        return super().get_queryset().filter(is_active=True)
+        return Mailing.objects.filter(owner=self.request.user)
 
 
 class MailingDetailView(DetailView):
@@ -150,43 +164,81 @@ class MailingDetailView(DetailView):
         return context
 
 
-class MailingCreateView(CreateView):
+class MailingCreateView(LoginRequiredMixin, CreateView):
     model = Mailing
     form_class = MailingForm
     template_name = "mailing_service/mailing_form.html"
     success_url = reverse_lazy("mailing_service:mailing_list")
 
+    def get_form_kwargs(self):
+        """Передаем текущего пользователя в форму"""
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
-        mailing = form.save()
-        user = self.request.user
-        mailing.owner = user
-        mailing.save()
-        return super().form_valid(form)
-
-    def form_invalid(self, form):
-        response = super().form_invalid(form)
-        response.context_data["error_message"] = "Please correct the errors below"
-
+        """Автоматически назначаем владельца и показываем сообщение"""
+        form.instance.owner = self.request.user
+        response = super().form_valid(form)
+        messages.success(self.request, "Рассылка успешно создана")
         return response
 
+    def form_invalid(self, form):
+        """Обработка невалидной формы с сообщением об ошибке"""
+        messages.error(self.request, "Пожалуйста, исправьте ошибки в форме")
+        return super().form_invalid(form)
 
-class MailingUpdateView(UpdateView):
+    def get_context_data(self, **kwargs):
+        """Добавляем дополнительные данные в контекст"""
+        context = super().get_context_data(**kwargs)
+        context['title'] = "Создание новой рассылки"
+        return context
+
+
+class MailingUpdateView(PermissionRequiredMixin, UpdateView):
     model = Mailing
     form_class = MailingForm
     template_name = "mailing_service/mailing_form.html"
-    success_url = reverse_lazy("mailing_service:mailing_list")
+    permission_required = "mailing.can_change_own_mailing"
+
+    def get_queryset(self):
+        """Фильтруем только рассылки текущего пользователя"""
+        return Mailing.objects.filter(owner=self.request.user)
+
+    def get_form_kwargs(self):
+        """Передаем текущего пользователя в форму"""
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
 
     def get_success_url(self):
-        return reverse("mailing_service:mailing_detail", args=[self.kwargs.get("pk")])
+        """URL для перенаправления после успешного обновления"""
+        messages.success(self.request, "Рассылка успешно обновлена")
+        return reverse("mailing_service:mailing_detail", kwargs={'pk': self.object.pk})
+
+    def form_invalid(self, form):
+        """Обработка невалидной формы"""
+        messages.error(self.request, "Ошибка обновления рассылки")
+        return super().form_invalid(form)
+
+    def get_context_data(self, **kwargs):
+        """Добавляем дополнительные данные в контекст"""
+        context = super().get_context_data(**kwargs)
+        context['title'] = f"Редактирование рассылки #{self.object.pk}"
+        return context
 
 
-class MailingDeleteView(LoginRequiredMixin, DeleteView):
+class MailingDeleteView(PermissionRequiredMixin, DeleteView):
     model = Mailing
-    success_url = reverse_lazy("mailing_service:mailing_list")  # Убрал .html
+    success_url = reverse_lazy("mailing_service:mailing_list")
+    permission_required = "mailing.can_delete_own_mailing"
 
-    def form_valid(self, form):
+    def get_queryset(self):
+        return Mailing.objects.filter(owner=self.request.user)
+
+    def delete(self, request, *args, **kwargs):
         messages.success(self.request, "Рассылка успешно удалена")
-        return super().form_valid(form)
+        return super().delete(request, *args, **kwargs)
 
 
 class MailingLogListView(ListView):
@@ -231,6 +283,10 @@ class MailingLogDeleteView(DeleteView):
 
 def send_mailing(request, mailing_id):
     mailing = get_object_or_404(Mailing, pk=mailing_id)
+
+    # Проверка прав
+    if not request.user.has_perm('mailing.can_start_own_mailing') or mailing.owner != request.user:
+        raise PermissionDenied
 
     if request.method == 'POST':
         try:
