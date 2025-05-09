@@ -35,6 +35,8 @@ class Recipient(models.Model):
             ("can_view_own_recipient", "Can view own recipients"),
             ("can_change_own_recipient", "Can change own recipients"),
             ("can_delete_own_recipient", "Can delete own recipients"),
+            ("can_view_all_recipients", "Can view all recipients"),
+            ("can_disable_recipient", "Сan disable recipients"),
         ]
 
     def __str__(self):
@@ -70,6 +72,8 @@ class Message(models.Model):
             ("can_view_own_message", "Can view own messages"),
             ("can_change_own_message", "Can change own messages"),
             ("can_delete_own_messages", "Can delete own messages"),
+            ("can_view_all_messages", "Can view all messages"),
+            ("can_send_message", "Can send messages manually"),
         ]
 
     def __str__(self):
@@ -115,10 +119,11 @@ class Mailing(models.Model):
             models.Index(fields=["is_active"]),
         ]
         permissions = [
-            ("can_view_own_mailing", "Can view own mailings"),
+            ("can_view_all_mailing", "Can view all mailings"),
             ("can_change_own_mailing", "Can change own mailings"),
             ("can_delete_own_mailing", "Can delete own mailings"),
-            ("can_start_own_mailing", "Can start own mailings"),
+            ("can_disable_mailing", "Может отключать любые рассылки"),
+            ("can_start_mailing", "Может запускать любые рассылки"),
         ]
 
     def __str__(self):
@@ -188,6 +193,10 @@ class MailingLog(models.Model):
         indexes = [
             models.Index(fields=["status"]),
             models.Index(fields=["date_of_attempt"]),
+        ]
+        permissions = [
+            ("can_view_all_logs", "Can view all logs"),
+            ("can_delete_logs", "Can delete logs"),
         ]
 
     def __str__(self):
