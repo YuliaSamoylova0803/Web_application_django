@@ -56,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.http.ConditionalGetMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -168,3 +169,11 @@ if CACHE_ENABLED:
     }
 
 STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+
+# Оптимальные настройки кеша
+CACHE_TTL = 60 * 15  # 15 минут (базовый TTL)
+
+# Для шаблонных фрагментов
+TEMPLATES_CACHE_TIMEOUT = {
+    'header': 60 * 60 * 2,  # 2 часа для хедера
+    'footer': 60 * 60 * 24,  # 24 часа для футера
