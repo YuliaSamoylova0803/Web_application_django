@@ -28,19 +28,20 @@ class MessageForm(StyleFormMixin, forms.ModelForm):
 
 
 class MailingForm(StyleFormMixin, forms.ModelForm):
-    recipients = forms.ModelMultipleChoiceField(
-        queryset=Recipient.objects.all(),
-        widget=forms.SelectMultiple(attrs={'class': 'select2'}),
-        label="Получатели"
-    )
-    first_shipment = forms.DateTimeField(
-        widget=forms.DateTimeInput(attrs={"type": "datetime-local"}),
-        input_formats=["%Y-%m-%dT%H:%M"],
-    )
-    end_shipment = forms.DateTimeField(
-        widget=forms.DateTimeInput(attrs={"type": "datetime-local"}),
-        input_formats=["%Y-%m-%dT%H:%M"],
-    )
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        if self.user:
+            self.fields['message'].queryset = Message.objects.filter(owner=self.user)
+            self.fields['recipients'].queryset = Recipient.objects.filter(owner=self.user)
+
+        # Настройка виджетов для даты/времени
+        for field in ['first_shipment', 'end_shipment']:
+            self.fields[field].widget = forms.DateTimeInput(
+                attrs={"type": "datetime-local"},
+                format="%Y-%m-%dT%H:%M"
+            )
 
     class Meta:
         model = Mailing
