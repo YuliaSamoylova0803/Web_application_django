@@ -166,3 +166,5 @@ if CACHE_ENABLED:
             'LOCATION': os.getenv('LOCATION')
         }
     }
+
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
