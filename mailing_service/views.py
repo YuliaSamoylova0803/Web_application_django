@@ -10,12 +10,16 @@ from django.views.generic.edit import CreateView, UpdateView
 from .forms import RecipientForm, MessageForm, MailingForm, MailingLogForm
 from django.db.models import Count
 from django.core.exceptions import PermissionDenied
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
+from django.core.cache import cache
 
 # Create your views here.
 def base(request):
     return render(request, 'mailing_service/base.html')
 
 
+@method_decorator(cache_page(60 * 60), name="dispatch")
 class BaseView(TemplateView):
     template_name = "mailing_service/base.html"
 
@@ -41,6 +45,7 @@ class BaseView(TemplateView):
 
 # app_name/<model_name>_action
 # mailing_service/recipient_list
+@method_decorator(cache_page(60 * 15), name="dispatch")
 class RecipientListView(LoginRequiredMixin, ListView):
     model = Recipient
     template_name = "mailing_service/recipient_list.html"
@@ -48,8 +53,10 @@ class RecipientListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         return Recipient.objects.filter(owner=self.request.user)
 
+
 # app_name/<model_name>_action
 # mailing_service/recipient_create
+
 class RecipientCreateView(LoginRequiredMixin, CreateView):
     model = Recipient
     form_class = RecipientForm
@@ -67,6 +74,7 @@ class RecipientCreateView(LoginRequiredMixin, CreateView):
 
         return  response
 
+
 # app_name/<model_name>_action
 # mailing_service/recipient_detail
 class RecipientDetailView(DetailView):
@@ -75,6 +83,7 @@ class RecipientDetailView(DetailView):
 
 # app_name/<model_name>_action
 # mailing_service/recipient_update
+
 class RecipientUpdateView(PermissionRequiredMixin, UpdateView):
     model = Recipient
     form_class = RecipientForm
@@ -88,6 +97,10 @@ class RecipientUpdateView(PermissionRequiredMixin, UpdateView):
         messages.success(self.request, "Получатель успешно обновлен")
         return reverse("mailing_service:recipient_detail", args=[self.kwargs.get("pk")])
 
+    def form_valid(self, form):
+        cache.delete(f'recipient_{self.object.id}')  # Инвалидация кеша деталей
+        cache.delete('recipients_list')  # Инвалидация списка
+        return super().form_valid(form)
 
 # app_name/<model_name>_action
 # mailing_service/recipient_delete
@@ -103,12 +116,15 @@ class RecipientDeleteView(PermissionRequiredMixin, DeleteView):
         messages.success(self.request, "Получатель успешно удален")
         return super().delete(request, *args, **kwargs)
 
+
+@method_decorator(cache_page(60 * 15), name="dispatch")
 class MessageListView(ListView):
     model = Message
 
 
 class MessageDetailView(DetailView):
     model = Message
+
 
 
 class MessageCreateView(CreateView):
@@ -130,6 +146,8 @@ class MessageCreateView(CreateView):
 
         return  response
 
+
+
 class MessageUpdateView(UpdateView):
     model = Message
     form_class = MessageForm
@@ -145,6 +163,7 @@ class MessageDeleteView(DeleteView):
     success_url = reverse_lazy("mailing_service:message_list.html")
 
 
+@method_decorator(cache_page(60 * 15), name="dispatch")
 class MailingListView(LoginRequiredMixin, ListView):
     model = Mailing
     template_name = "mailings/mailing_list.html"
@@ -162,6 +181,7 @@ class MailingDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         context['logs'] = MailingLog.objects.filter(mailing=self.object)
         return context
+
 
 
 class MailingCreateView(LoginRequiredMixin, CreateView):
@@ -193,6 +213,7 @@ class MailingCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         context['title'] = "Создание новой рассылки"
         return context
+
 
 
 class MailingUpdateView(PermissionRequiredMixin, UpdateView):
@@ -238,15 +259,18 @@ class MailingDeleteView(PermissionRequiredMixin, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, "Рассылка успешно удалена")
+        cache.delete("mailing_list")
         return super().delete(request, *args, **kwargs)
 
 
+@method_decorator(cache_page(60 * 15), name="dispatch")
 class MailingLogListView(ListView):
     model = MailingLog
 
 
 class MailingLogDetailView(DetailView):
     model = MailingLog
+
 
 
 class MailingLogCreateView(CreateView):
