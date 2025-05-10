@@ -6,8 +6,8 @@ from mailing_service.apps import MailingServiceConfig
 from .views import RecipientCreateView, RecipientListView, RecipientDetailView, RecipientUpdateView, RecipientDeleteView
 from .views import MessageCreateView, MessageListView, MessageDetailView, MessageUpdateView, MessageDeleteView
 from .views import MailingCreateView, MailingListView, MailingDetailView, MailingUpdateView, MailingDeleteView
-from .views import MailingLogCreateView, MailingLogListView, MailingLogDetailView, MailingLogUpdateView, MailingLogDeleteView
-from .views import send_mailing, BaseView
+from .views import MailingLogListView, MailingLogDetailView
+from .views import  BaseView, send_mailing
 
 app_name = MailingServiceConfig.name
 
@@ -33,9 +33,6 @@ urlpatterns =[
     path('mailings/<int:mailing_id>/send/', send_mailing, name='send_mailing'),
 
     path("mailing_logs/", MailingLogListView.as_view(), name="mailing_log_list"),
-    path("mailing_logs/new/", MailingLogCreateView.as_view(), name="mailing_log_create"),
     path("mailing_logs/<int:pk>/", MailingLogDetailView.as_view(), name="mailing_log_detail"),
-    path("mailing_logs/<int:pk>/update/", MailingLogUpdateView.as_view(), name="mailing_log_update"),
-    path("mailing_logs/<int:pk>/delete/", MailingLogDeleteView.as_view(), name="mailing_log_delete"),
 
 ]
