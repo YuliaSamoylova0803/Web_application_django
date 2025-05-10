@@ -160,7 +160,7 @@ class MessageUpdateView(UpdateView):
 
 class MessageDeleteView(DeleteView):
     model = Message
-    success_url = reverse_lazy("mailing_service:message_list.html")
+    success_url = reverse_lazy("mailing_service:message_list")
 
 
 @method_decorator(cache_page(60 * 15), name="dispatch")
@@ -273,38 +273,38 @@ class MailingLogDetailView(DetailView):
 
 
 
-class MailingLogCreateView(CreateView):
-    model = MailingLog
-    form_class = MailingLogForm
-    template_name = "mailing_service/mailing_log_form.html"
-    success_url = reverse_lazy("mailing_service:mailing_log_list")
-
-    def form_valid(self, form):
-        form.instance.created_by = self.request.user
-        return super().form_valid(form)
-
-    def form_invalid(self, form):
-        response = super().form_invalid(form)
-        response.context_data["error_message"] = "Please correct the errors below"
-
-        return response
-
-
-class MailingLogUpdateView(UpdateView):
-    model = MailingLog
-    form_class = MailingLogForm
-    template_name = "mailing_service/mailing_log_form.html"
-    success_url = reverse_lazy("mailing_service:mailing_log_list")
-
-    def get_success_url(self):
-        return reverse("mailing_service:mailing_log_detail", args=[self.kwargs.get("pk")])
-
-
-class MailingLogDeleteView(DeleteView):
-    model = MailingLog
-    success_url = reverse_lazy("mailing_service:mailing_log_list.html")
-
-
+# class MailingLogCreateView(CreateView):
+#     model = MailingLog
+#     form_class = MailingLogForm
+#     template_name = "mailing_service/mailing_log_form.html"
+#     success_url = reverse_lazy("mailing_service:mailing_log_list")
+#
+#     def form_valid(self, form):
+#         form.instance.created_by = self.request.user
+#         return super().form_valid(form)
+#
+#     def form_invalid(self, form):
+#         response = super().form_invalid(form)
+#         response.context_data["error_message"] = "Please correct the errors below"
+#
+#         return response
+#
+#
+# class MailingLogUpdateView(UpdateView):
+#     model = MailingLog
+#     form_class = MailingLogForm
+#     template_name = "mailing_service/mailing_log_form.html"
+#     success_url = reverse_lazy("mailing_service:mailing_log_list")
+#
+#     def get_success_url(self):
+#         return reverse("mailing_service:mailing_log_detail", args=[self.kwargs.get("pk")])
+#
+#
+# class MailingLogDeleteView(DeleteView):
+#     model = MailingLog
+#     success_url = reverse_lazy("mailing_service:mailing_log_list")
+#
+#
 def send_mailing(request, mailing_id):
     mailing = get_object_or_404(Mailing, pk=mailing_id)
 
