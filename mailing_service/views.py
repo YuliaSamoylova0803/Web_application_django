@@ -1,25 +1,25 @@
-from django.conf import settings
+
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
-from django.core.mail import send_mail
+
 from .models import Recipient, Message, Mailing, MailingLog
 from django.views.generic import ListView, DetailView, DeleteView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView
-from .forms import RecipientForm, MessageForm, MailingForm, MailingLogForm
-from django.db.models import Count
+from .forms import RecipientForm, MessageForm, MailingForm
 from django.core.exceptions import PermissionDenied
 from django.views.decorators.cache import cache_page
 from django.utils.decorators import method_decorator
 from django.core.cache import cache
 
+
 # Create your views here.
 def base(request):
-    return render(request, 'mailing_service/base.html')
+    return render(request, "mailing_service/base.html")
 
 
-#@method_decorator(cache_page(60 * 60), name="dispatch")
+# @method_decorator(cache_page(60 * 60), name="dispatch")
 class BaseView(TemplateView):
     template_name = "mailing_service/base.html"
 
@@ -35,11 +35,13 @@ class BaseView(TemplateView):
         # Количество уникальных получателей
         unique_recipients = Recipient.objects.distinct().count()
 
-        context.update({
-            'total_mailings': total_mailings,
-            'active_mailings': active_mailings,
-            'unique_recipients': unique_recipients,
-        })
+        context.update(
+            {
+                "total_mailings": total_mailings,
+                "active_mailings": active_mailings,
+                "unique_recipients": unique_recipients,
+            }
+        )
         return context
 
 
@@ -57,6 +59,7 @@ class RecipientListView(LoginRequiredMixin, ListView):
 # app_name/<model_name>_action
 # mailing_service/recipient_create
 
+
 class RecipientCreateView(LoginRequiredMixin, CreateView):
     model = Recipient
     form_class = RecipientForm
@@ -72,7 +75,7 @@ class RecipientCreateView(LoginRequiredMixin, CreateView):
         response = super().form_invalid(form)
         response.context_data["error_message"] = "Please correct the errors below"
 
-        return  response
+        return response
 
 
 # app_name/<model_name>_action
@@ -83,6 +86,7 @@ class RecipientDetailView(DetailView):
 
 # app_name/<model_name>_action
 # mailing_service/recipient_update
+
 
 class RecipientUpdateView(PermissionRequiredMixin, UpdateView):
     model = Recipient
@@ -98,9 +102,10 @@ class RecipientUpdateView(PermissionRequiredMixin, UpdateView):
         return reverse("mailing_service:recipient_detail", args=[self.kwargs.get("pk")])
 
     def form_valid(self, form):
-        cache.delete(f'recipient_{self.object.id}')  # Инвалидация кеша деталей
-        cache.delete('recipients_list')  # Инвалидация списка
+        cache.delete(f"recipient_{self.object.id}")  # Инвалидация кеша деталей
+        cache.delete("recipients_list")  # Инвалидация списка
         return super().form_valid(form)
+
 
 # app_name/<model_name>_action
 # mailing_service/recipient_delete
@@ -126,7 +131,6 @@ class MessageDetailView(DetailView):
     model = Message
 
 
-
 class MessageCreateView(CreateView):
     model = Message
     form_class = MessageForm
@@ -144,8 +148,7 @@ class MessageCreateView(CreateView):
         response = super().form_invalid(form)
         response.context_data["error_message"] = "Please correct the errors below"
 
-        return  response
-
+        return response
 
 
 class MessageUpdateView(UpdateView):
@@ -169,7 +172,6 @@ class MailingListView(LoginRequiredMixin, ListView):
     template_name = "mailings/mailing_list.html"
     paginate_by = 10
 
-
     def get_queryset(self):
         return Mailing.objects.filter(owner=self.request.user)
 
@@ -179,9 +181,8 @@ class MailingDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['logs'] = MailingLog.objects.filter(mailing=self.object)
+        context["logs"] = MailingLog.objects.filter(mailing=self.object)
         return context
-
 
 
 class MailingCreateView(LoginRequiredMixin, CreateView):
@@ -193,7 +194,7 @@ class MailingCreateView(LoginRequiredMixin, CreateView):
     def get_form_kwargs(self):
         """Передаем текущего пользователя в форму"""
         kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user
+        kwargs["user"] = self.request.user
         return kwargs
 
     def form_valid(self, form):
@@ -211,9 +212,8 @@ class MailingCreateView(LoginRequiredMixin, CreateView):
     def get_context_data(self, **kwargs):
         """Добавляем дополнительные данные в контекст"""
         context = super().get_context_data(**kwargs)
-        context['title'] = "Создание новой рассылки"
+        context["title"] = "Создание новой рассылки"
         return context
-
 
 
 class MailingUpdateView(PermissionRequiredMixin, UpdateView):
@@ -229,13 +229,13 @@ class MailingUpdateView(PermissionRequiredMixin, UpdateView):
     def get_form_kwargs(self):
         """Передаем текущего пользователя в форму"""
         kwargs = super().get_form_kwargs()
-        kwargs['user'] = self.request.user
+        kwargs["user"] = self.request.user
         return kwargs
 
     def get_success_url(self):
         """URL для перенаправления после успешного обновления"""
         messages.success(self.request, "Рассылка успешно обновлена")
-        return reverse("mailing_service:mailing_detail", kwargs={'pk': self.object.pk})
+        return reverse("mailing_service:mailing_detail", kwargs={"pk": self.object.pk})
 
     def form_invalid(self, form):
         """Обработка невалидной формы"""
@@ -245,7 +245,7 @@ class MailingUpdateView(PermissionRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         """Добавляем дополнительные данные в контекст"""
         context = super().get_context_data(**kwargs)
-        context['title'] = f"Редактирование рассылки #{self.object.pk}"
+        context["title"] = f"Редактирование рассылки #{self.object.pk}"
         return context
 
 
@@ -270,7 +270,6 @@ class MailingLogListView(ListView):
 
 class MailingLogDetailView(DetailView):
     model = MailingLog
-
 
 
 # class MailingLogCreateView(CreateView):
@@ -309,14 +308,17 @@ def send_mailing(request, mailing_id):
     mailing = get_object_or_404(Mailing, pk=mailing_id)
 
     # Проверка прав
-    if not request.user.has_perm('mailing.can_start_own_mailing') or mailing.owner != request.user:
+    if (
+        not request.user.has_perm("mailing.can_start_own_mailing")
+        or mailing.owner != request.user
+    ):
         raise PermissionDenied
 
-    if request.method == 'POST':
+    if request.method == "POST":
         try:
             mailing.send()
-            messages.success(request, 'Рассылка успешно запущена')
+            messages.success(request, "Рассылка успешно запущена")
         except Exception as e:
-            messages.error(request, f'Ошибка при отправке рассылки: {str(e)}')
+            messages.error(request, f"Ошибка при отправке рассылки: {str(e)}")
 
-    return redirect('mailing_service:mailing_detail', pk=mailing_id)
+    return redirect("mailing_service:mailing_detail", pk=mailing_id)

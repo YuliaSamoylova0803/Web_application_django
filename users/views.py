@@ -1,6 +1,4 @@
 import secrets
-
-from django.contrib.auth.views import LoginView
 from django.core.mail import send_mail
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy, reverse
@@ -11,11 +9,12 @@ from users.models import User
 from config.settings import EMAIL_HOST_USER
 from django.contrib.auth.decorators import login_required
 
+
 # Create your views here.
 class RegisterView(CreateView):
     model = User
     form_class = UserRegisterForm
-    template_name = 'users/register.html'
+    template_name = "users/register.html"
     success_url = reverse_lazy("users:login")
 
     def form_valid(self, form):
@@ -30,7 +29,7 @@ class RegisterView(CreateView):
             subject="Подтверждение почты",
             message=f"Привет, перейди по ссылке для подтверждения почты {url}",
             from_email=EMAIL_HOST_USER,
-            recipient_list=[user.email]
+            recipient_list=[user.email],
         )
         return super().form_valid(form)
 

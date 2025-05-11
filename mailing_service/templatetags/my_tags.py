@@ -10,6 +10,7 @@ def media_filter(path):
         return f"{settings.MEDIA_URL}{path}"
     return "#"
 
+
 @register.filter
 def filename(value):
-    return value.split('/')[-1]
+    return value.split("/")[-1]

@@ -1,5 +1,5 @@
 import logging
-from django.core.mail import EmailMessage
+
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -18,13 +18,24 @@ class Recipient(models.Model):
     Модель получателя рассылки.
     Содержит контактные данные и информацию о получателе.
     """
-    email = models.EmailField(max_length=50, unique=True, verbose_name="Почта",
-                              help_text="Введите свою электронную почту")
-    full_name = models.CharField(max_length=100, verbose_name="ФИО получателя", help_text="Введите Ф.И.О.")
-    comment = models.TextField(verbose_name="Комментарий", blank=True, help_text="Дополнительные данные")
+
+    email = models.EmailField(
+        max_length=50,
+        unique=True,
+        verbose_name="Почта",
+        help_text="Введите свою электронную почту",
+    )
+    full_name = models.CharField(
+        max_length=100, verbose_name="ФИО получателя", help_text="Введите Ф.И.О."
+    )
+    comment = models.TextField(
+        verbose_name="Комментарий", blank=True, help_text="Дополнительные данные"
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
-    owner = models.ForeignKey(User, verbose_name="Владелец", blank=True, null=True, on_delete=models.CASCADE)
+    owner = models.ForeignKey(
+        User, verbose_name="Владелец", blank=True, null=True, on_delete=models.CASCADE
+    )
 
     def save(self, *args, **kwargs):
         try:
@@ -71,28 +82,51 @@ class Message(models.Model):
     Модель сообщения для рассылки.
     Содержит тему, текст и возможные вложения.
     """
-    subject_message = models.CharField(max_length=255, verbose_name="Тема письма", help_text="Какова тема письма?",
-                                       validators=[
-                                           MinLengthValidator(5),
-                                           MaxLengthValidator(100),
-                                       ])
-    message_body = models.TextField(verbose_name="Тело сообщения", help_text="Введите сообщение")
+
+    subject_message = models.CharField(
+        max_length=255,
+        verbose_name="Тема письма",
+        help_text="Какова тема письма?",
+        validators=[
+            MinLengthValidator(5),
+            MaxLengthValidator(100),
+        ],
+    )
+    message_body = models.TextField(
+        verbose_name="Тело сообщения", help_text="Введите сообщение"
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
-    attachment = models.FileField(upload_to="message_attachments/%Y/%m/%d/", verbose_name="Вложение", blank=True,
-                                  null=True)
-    owner = models.ForeignKey(User, verbose_name="Владелец", help_text="Укажите владельца сообщения",
-                              blank=True, null=True, on_delete=models.CASCADE)
+    attachment = models.FileField(
+        upload_to="message_attachments/%Y/%m/%d/",
+        verbose_name="Вложение",
+        blank=True,
+        null=True,
+    )
+    owner = models.ForeignKey(
+        User,
+        verbose_name="Владелец",
+        help_text="Укажите владельца сообщения",
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+    )
 
     def save(self, *args, **kwargs):
         try:
             super().save(*args, **kwargs)
             if self._state.adding:
-                logger.info(f"Создано новое сообщение: '{self.subject_message}' (ID: {self.id})")
+                logger.info(
+                    f"Создано новое сообщение: '{self.subject_message}' (ID: {self.id})"
+                )
             else:
-                logger.info(f"Обновлено сообщение: '{self.subject_message}' (ID: {self.id})")
+                logger.info(
+                    f"Обновлено сообщение: '{self.subject_message}' (ID: {self.id})"
+                )
         except Exception as e:
-            logger.error(f"Ошибка при сохранении сообщения '{self.subject_message}': {str(e)}")
+            logger.error(
+                f"Ошибка при сохранении сообщения '{self.subject_message}': {str(e)}"
+            )
             raise
 
     def delete(self, *args, **kwargs):
@@ -101,7 +135,9 @@ class Message(models.Model):
             super().delete(*args, **kwargs)
             logger.warning(f"Удалено сообщение: '{subject}'")
         except Exception as e:
-            logger.error(f"Ошибка при удалении сообщения '{self.subject_message}': {str(e)}")
+            logger.error(
+                f"Ошибка при удалении сообщения '{self.subject_message}': {str(e)}"
+            )
             raise
 
     class Meta:
@@ -128,10 +164,15 @@ class Mailing(models.Model):
     Модель рассылки сообщений.
     Определяет параметры и статус рассылки.
     """
-    first_shipment = models.DateTimeField(verbose_name="Дата и время первой отправки",
-                                          help_text="Дата и время первой отправки")
-    end_shipment = models.DateTimeField(verbose_name="Дата и время окончания отправки",
-                                        help_text="Дата и время окончания отправки")
+
+    first_shipment = models.DateTimeField(
+        verbose_name="Дата и время первой отправки",
+        help_text="Дата и время первой отправки",
+    )
+    end_shipment = models.DateTimeField(
+        verbose_name="Дата и время окончания отправки",
+        help_text="Дата и время окончания отправки",
+    )
     STATUS_CREATED = "CREATED"
     STATUS_LAUNCHED = "LAUNCHED"
     STATUS_COMPLETED = "COMPLETED"
@@ -141,14 +182,29 @@ class Mailing(models.Model):
         (STATUS_LAUNCHED, "Запущена"),
         (STATUS_COMPLETED, "Завершена"),
     )
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, blank=True, verbose_name="Статус",
-                              help_text="Выберите статус рассылки")
-    message = models.ForeignKey(Message, on_delete=CASCADE, verbose_name="Cообщения", related_name="messages")
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        blank=True,
+        verbose_name="Статус",
+        help_text="Выберите статус рассылки",
+    )
+    message = models.ForeignKey(
+        Message, on_delete=CASCADE, verbose_name="Cообщения", related_name="messages"
+    )
     recipients = models.ManyToManyField(Recipient, verbose_name="Получатели")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
-    is_active = models.BooleanField(default=True, verbose_name="Активна", help_text="Указывает, активна ли рассылка")
-    owner = models.ForeignKey(User, verbose_name="Владелец", help_text="Укажите владельца рассылки", blank=True,
-                              null=True, on_delete=models.CASCADE)
+    is_active = models.BooleanField(
+        default=True, verbose_name="Активна", help_text="Указывает, активна ли рассылка"
+    )
+    owner = models.ForeignKey(
+        User,
+        verbose_name="Владелец",
+        help_text="Укажите владельца рассылки",
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+    )
 
     def clean(self):
         if self.end_shipment <= self.first_shipment:
@@ -160,9 +216,13 @@ class Mailing(models.Model):
         try:
             super().save(*args, **kwargs)
             if self._state.adding:
-                logger.info(f"Создана новая рассылка ID {self.id} (Статус: {self.get_status_display()})")
+                logger.info(
+                    f"Создана новая рассылка ID {self.id} (Статус: {self.get_status_display()})"
+                )
             else:
-                logger.info(f"Обновлена рассылка ID {self.id} (Статус: {self.get_status_display()})")
+                logger.info(
+                    f"Обновлена рассылка ID {self.id} (Статус: {self.get_status_display()})"
+                )
         except Exception as e:
             logger.error(f"Ошибка при сохранении рассылки {self.id}: {str(e)}")
             raise
@@ -177,7 +237,9 @@ class Mailing(models.Model):
             raise
 
     def send(self):
-        logger.info(f"Запуск рассылки ID {self.id} для {self.recipients.count()} получателей")
+        logger.info(
+            f"Запуск рассылки ID {self.id} для {self.recipients.count()} получателей"
+        )
 
         success_count = 0
         fail_count = 0
@@ -198,26 +260,26 @@ class Mailing(models.Model):
                 # Обработка вложения с определением MIME-типа
                 if self.message.attachment:
                     filename = os.path.basename(self.message.attachment.path)
-                    content_type = 'application/octet-stream'
+                    content_type = "application/octet-stream"
 
                     # Определяем Content-Type по расширению файла
-                    if filename.lower().endswith(('.jpg', '.jpeg')):
-                        content_type = 'image/jpeg'
-                    elif filename.lower().endswith('.png'):
-                        content_type = 'image/png'
-                    elif filename.lower().endswith('.pdf'):
-                        content_type = 'application/pdf'
-                    elif filename.lower().endswith(('.doc', '.docx')):
-                        content_type = 'application/msword'
-                    elif filename.lower().endswith('.xlsx'):
-                        content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    if filename.lower().endswith((".jpg", ".jpeg")):
+                        content_type = "image/jpeg"
+                    elif filename.lower().endswith(".png"):
+                        content_type = "image/png"
+                    elif filename.lower().endswith(".pdf"):
+                        content_type = "application/pdf"
+                    elif filename.lower().endswith((".doc", ".docx")):
+                        content_type = "application/msword"
+                    elif filename.lower().endswith(".xlsx"):
+                        content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
                     # Читаем файл и прикрепляем
-                    with open(self.message.attachment.path, 'rb') as file:
+                    with open(self.message.attachment.path, "rb") as file:
                         email.attach(
                             filename=filename,
                             content=file.read(),
-                            mimetype=content_type
+                            mimetype=content_type,
                         )
 
                 email.send()
@@ -276,19 +338,31 @@ class MailingLog(models.Model):
     Модель попытки рассылки.
     Фиксирует результаты отправки сообщений.
     """
-    date_of_attempt = models.DateTimeField(auto_now_add=True, verbose_name="Дата и время попытки")
+
+    date_of_attempt = models.DateTimeField(
+        auto_now_add=True, verbose_name="Дата и время попытки"
+    )
     STATUS_SUCCESS = "success"
     STATUS_FAILED = "failed"
     STATUS_CHOICES = [
         (STATUS_SUCCESS, "Успешно"),
         (STATUS_FAILED, "Не успешно"),
     ]
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, verbose_name="Статус")
+    status = models.CharField(
+        max_length=10, choices=STATUS_CHOICES, verbose_name="Статус"
+    )
     mail_server_response = models.TextField(verbose_name="Ответ почтового сервера")
     mailing = models.ForeignKey(Mailing, on_delete=CASCADE, verbose_name="Рассылка")
-    recipient = models.ForeignKey(Recipient, on_delete=models.SET_NULL, null=True, blank=True,
-                                  verbose_name="Получатель")
-    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Владелец")
+    recipient = models.ForeignKey(
+        Recipient,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Получатель",
+    )
+    owner = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Владелец"
+    )
 
     def save(self, *args, **kwargs):
         try:
