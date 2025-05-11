@@ -19,7 +19,7 @@ def base(request):
     return render(request, 'mailing_service/base.html')
 
 
-@method_decorator(cache_page(60 * 60), name="dispatch")
+#@method_decorator(cache_page(60 * 60), name="dispatch")
 class BaseView(TemplateView):
     template_name = "mailing_service/base.html"
 

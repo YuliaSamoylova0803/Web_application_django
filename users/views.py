@@ -1,5 +1,6 @@
 import secrets
 
+from django.contrib.auth.views import LoginView
 from django.core.mail import send_mail
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy, reverse
@@ -52,6 +53,3 @@ def edit_profile(request):
             return redirect("mailing_service:base")
 
     return render(request, "users/edit_profile.html", {"form": form})
-
-
-
