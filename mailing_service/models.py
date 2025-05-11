@@ -1,5 +1,7 @@
+import logging
 from email.message import EmailMessage
 
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.conf import settings
@@ -7,8 +9,10 @@ from django.db.models import CASCADE
 
 from users.models import User
 
+# Настройка логгера
+logger = logging.getLogger(__name__)
 
-# Create your models here.
+
 class Recipient(models.Model):
     """
     Модель получателя рассылки.
@@ -20,8 +24,27 @@ class Recipient(models.Model):
     comment = models.TextField(verbose_name="Комментарий", blank=True, help_text="Дополнительные данные")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
-
     owner = models.ForeignKey(User, verbose_name="Владелец", blank=True, null=True, on_delete=models.CASCADE)
+
+    def save(self, *args, **kwargs):
+        try:
+            super().save(*args, **kwargs)
+            if self._state.adding:
+                logger.info(f"Создан новый получатель: {self.email} (ID: {self.id})")
+            else:
+                logger.info(f"Обновлен получатель: {self.email} (ID: {self.id})")
+        except Exception as e:
+            logger.error(f"Ошибка при сохранении получателя {self.email}: {str(e)}")
+            raise
+
+    def delete(self, *args, **kwargs):
+        try:
+            email = self.email
+            super().delete(*args, **kwargs)
+            logger.warning(f"Удален получатель: {email}")
+        except Exception as e:
+            logger.error(f"Ошибка при удалении получателя {self.email}: {str(e)}")
+            raise
 
     class Meta:
         verbose_name = "получатель"
@@ -45,9 +68,9 @@ class Recipient(models.Model):
 
 class Message(models.Model):
     """
-       Модель сообщения для рассылки.
-       Содержит тему, текст и возможные вложения.
-       """
+    Модель сообщения для рассылки.
+    Содержит тему, текст и возможные вложения.
+    """
     subject_message = models.CharField(max_length=255, verbose_name="Тема письма", help_text="Какова тема письма?",
                                        validators=[
                                            MinLengthValidator(5),
@@ -57,9 +80,29 @@ class Message(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
     attachment = models.FileField(upload_to="message_attachments/%Y/%m/%d/", verbose_name="Вложение", blank=True,
-                                  null=True, )
+                                  null=True)
+    owner = models.ForeignKey(User, verbose_name="Владелец", help_text="Укажите владельца сообщения",
+                              blank=True, null=True, on_delete=models.CASCADE)
 
-    owner = models.ForeignKey(User, verbose_name="Владелец", help_text="Укажите владельца сообщения", blank=True, null=True, on_delete=models.CASCADE)
+    def save(self, *args, **kwargs):
+        try:
+            super().save(*args, **kwargs)
+            if self._state.adding:
+                logger.info(f"Создано новое сообщение: '{self.subject_message}' (ID: {self.id})")
+            else:
+                logger.info(f"Обновлено сообщение: '{self.subject_message}' (ID: {self.id})")
+        except Exception as e:
+            logger.error(f"Ошибка при сохранении сообщения '{self.subject_message}': {str(e)}")
+            raise
+
+    def delete(self, *args, **kwargs):
+        try:
+            subject = self.subject_message
+            super().delete(*args, **kwargs)
+            logger.warning(f"Удалено сообщение: '{subject}'")
+        except Exception as e:
+            logger.error(f"Ошибка при удалении сообщения '{self.subject_message}': {str(e)}")
+            raise
 
     class Meta:
         verbose_name = "сообщение"
@@ -82,9 +125,9 @@ class Message(models.Model):
 
 class Mailing(models.Model):
     """
-        Модель рассылки сообщений.
-        Определяет параметры и статус рассылки.
-        """
+    Модель рассылки сообщений.
+    Определяет параметры и статус рассылки.
+    """
     first_shipment = models.DateTimeField(verbose_name="Дата и время первой отправки",
                                           help_text="Дата и время первой отправки")
     end_shipment = models.DateTimeField(verbose_name="Дата и время окончания отправки",
@@ -98,21 +141,92 @@ class Mailing(models.Model):
         (STATUS_LAUNCHED, "Запущена"),
         (STATUS_COMPLETED, "Завершена"),
     )
-
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, blank=True, verbose_name="Статус",
                               help_text="Выберите статус рассылки")
     message = models.ForeignKey(Message, on_delete=CASCADE, verbose_name="Cообщения", related_name="messages")
     recipients = models.ManyToManyField(Recipient, verbose_name="Получатели")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     is_active = models.BooleanField(default=True, verbose_name="Активна", help_text="Указывает, активна ли рассылка")
-
     owner = models.ForeignKey(User, verbose_name="Владелец", help_text="Укажите владельца рассылки", blank=True,
                               null=True, on_delete=models.CASCADE)
+
+    def clean(self):
+        if self.end_shipment <= self.first_shipment:
+            error_msg = "Дата окончания должна быть позже даты начала"
+            logger.error(f"Ошибка валидации рассылки {self.id}: {error_msg}")
+            raise ValidationError(error_msg)
+
+    def save(self, *args, **kwargs):
+        try:
+            super().save(*args, **kwargs)
+            if self._state.adding:
+                logger.info(f"Создана новая рассылка ID {self.id} (Статус: {self.get_status_display()})")
+            else:
+                logger.info(f"Обновлена рассылка ID {self.id} (Статус: {self.get_status_display()})")
+        except Exception as e:
+            logger.error(f"Ошибка при сохранении рассылки {self.id}: {str(e)}")
+            raise
+
+    def delete(self, *args, **kwargs):
+        try:
+            mailing_id = self.id
+            super().delete(*args, **kwargs)
+            logger.warning(f"Удалена рассылка ID {mailing_id}")
+        except Exception as e:
+            logger.error(f"Ошибка при удалении рассылки {self.id}: {str(e)}")
+            raise
+
+    def send(self):
+        logger.info(f"Запуск рассылки ID {self.id} для {self.recipients.count()} получателей")
+
+        success_count = 0
+        fail_count = 0
+
+        for recipient in self.recipients.all():
+            try:
+                email = EmailMessage(
+                    subject=self.message.subject_message,
+                    body=self.message.message_body,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[recipient.email],
+                )
+                if self.message.attachment:
+                    email.attach_file(self.message.attachment.path)
+
+                email.send()
+                success_count += 1
+
+                MailingLog.objects.create(
+                    mailing=self,
+                    recipient=recipient,
+                    status=MailingLog.STATUS_SUCCESS,
+                    mail_server_response="Успешно отправлено",
+                )
+                logger.debug(f"Письмо успешно отправлено для {recipient.email}")
+
+            except Exception as e:
+                fail_count += 1
+                error_msg = str(e)
+                logger.error(f"Ошибка отправки для {recipient.email}: {error_msg}")
+
+                MailingLog.objects.create(
+                    mailing=self,
+                    recipient=recipient,
+                    status=MailingLog.STATUS_FAILED,
+                    mail_server_response=error_msg,
+                )
+
+        logger.info(
+            f"Рассылка ID {self.id} завершена. "
+            f"Успешно: {success_count}, Неудачно: {fail_count}"
+        )
+        self.status = self.STATUS_LAUNCHED
+        self.save()
 
     class Meta:
         verbose_name = "рассылка"
         verbose_name_plural = "рассылки"
-        ordering = ["-first_shipment", "status", ]
+        ordering = ["-first_shipment", "status"]
         indexes = [
             models.Index(fields=["status"]),
             models.Index(fields=["first_shipment"]),
@@ -130,68 +244,42 @@ class Mailing(models.Model):
         return f"Рассылка #{self.id} ({self.get_status_display() or 'Без статуса'})"
 
 
-    def send(self):
-        from django.core.mail import send_mail
-        from django.conf import settings
-
-        for recipient in self.recipients.all():
-            try:
-                email= EmailMessage(
-                    subject=self.message.subject_message,
-                    body=self.message.message_body,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    to=[recipient.email],
-                )
-                if self.message.attachment:
-                    email.attach_file(self.message.attachment.path)
-
-                email.send()
-
-                MailingLog.objects.create(
-                    mailing=self,
-                    recipient=recipient,
-                    status=MailingLog.STATUS_SUCCESS,
-                    mail_server_response="Успешно отправлено",
-                )
-
-            except Exception as e:
-                MailingLog.objects.create(
-                    mailing=self,
-                    recipient=recipient,
-                    status=MailingLog.STATUS_FAILED,
-                    mail_server_response=str(e),
-                )
-
-        self.status = self.STATUS_LAUNCHED
-        self.save()
-
-
 class MailingLog(models.Model):
     """
-        Модель попытка рассылки.
-        Фиксирует результаты отправки сообщений.
-        """
+    Модель попытки рассылки.
+    Фиксирует результаты отправки сообщений.
+    """
     date_of_attempt = models.DateTimeField(auto_now_add=True, verbose_name="Дата и время попытки")
-
     STATUS_SUCCESS = "success"
     STATUS_FAILED = "failed"
     STATUS_CHOICES = [
         (STATUS_SUCCESS, "Успешно"),
         (STATUS_FAILED, "Не успешно"),
     ]
-
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, verbose_name="Статус")
     mail_server_response = models.TextField(verbose_name="Ответ почтового сервера")
     mailing = models.ForeignKey(Mailing, on_delete=CASCADE, verbose_name="Рассылка")
     recipient = models.ForeignKey(Recipient, on_delete=models.SET_NULL, null=True, blank=True,
                                   verbose_name="Получатель")
+    owner = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Владелец")
+
+    def save(self, *args, **kwargs):
+        try:
+            super().save(*args, **kwargs)
+            logger.debug(
+                f"Записана попытка рассылки для рассылки ID {self.mailing_id}. "
+                f"Статус: {self.get_status_display()}"
+            )
+        except Exception as e:
+            logger.error(f"Ошибка при сохранении лога рассылки: {str(e)}")
+            raise
 
     class Meta:
         verbose_name = "попытка рассылки"
         verbose_name_plural = "попытки рассылки"
         ordering = ["-date_of_attempt"]
         indexes = [
-            models.Index(fields=["status"]),
+            models.Index(fields=["status", "owner"]),
             models.Index(fields=["date_of_attempt"]),
         ]
         permissions = [
