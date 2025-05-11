@@ -1,5 +1,5 @@
 import logging
-from email.message import EmailMessage
+from django.core.mail import EmailMessage
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -184,14 +184,41 @@ class Mailing(models.Model):
 
         for recipient in self.recipients.all():
             try:
+                # Используем EmailMessage из django.core.mail
+                from django.core.mail import EmailMessage
+                import os
+
                 email = EmailMessage(
                     subject=self.message.subject_message,
                     body=self.message.message_body,
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     to=[recipient.email],
                 )
+
+                # Обработка вложения с определением MIME-типа
                 if self.message.attachment:
-                    email.attach_file(self.message.attachment.path)
+                    filename = os.path.basename(self.message.attachment.path)
+                    content_type = 'application/octet-stream'
+
+                    # Определяем Content-Type по расширению файла
+                    if filename.lower().endswith(('.jpg', '.jpeg')):
+                        content_type = 'image/jpeg'
+                    elif filename.lower().endswith('.png'):
+                        content_type = 'image/png'
+                    elif filename.lower().endswith('.pdf'):
+                        content_type = 'application/pdf'
+                    elif filename.lower().endswith(('.doc', '.docx')):
+                        content_type = 'application/msword'
+                    elif filename.lower().endswith('.xlsx'):
+                        content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+                    # Читаем файл и прикрепляем
+                    with open(self.message.attachment.path, 'rb') as file:
+                        email.attach(
+                            filename=filename,
+                            content=file.read(),
+                            mimetype=content_type
+                        )
 
                 email.send()
                 success_count += 1
