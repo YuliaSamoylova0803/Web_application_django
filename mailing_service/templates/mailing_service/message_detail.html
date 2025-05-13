@@ -1,0 +1,30 @@
+{% extends 'mailing_service/message_list.html' %}
+{% load my_tags %}
+
+{% block content %}
+<div class="album py-5 bg-body-tertiary">
+    <div class="container">
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+            <div class="col">
+                <div class="card shadow-sm">
+
+                    <div class="card-body">
+                        <p class="card-text">Тема сообщения: {{ message.subject_message }}</p>
+                        <p class="card-text">Полный текст сообщения: {{ message.message_body }}</p>
+                        <p class="card-text">Вложения: {{ message.attachment }} </p>
+                        <img src="{{ message.attachment|media_filter }}" class="bd-placeholder-img card-img-top" width="100%"
+                            height="225">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="btn-group">
+                                <a class="btn btn-mint" href="{% url 'mailing_service:recipient_list' %}"
+                                   role="button">Назад</a>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

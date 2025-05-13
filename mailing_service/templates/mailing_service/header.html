@@ -1,0 +1,42 @@
+<!-- Отладочная информация -->
+<div class="d-none">
+    User: {{ user }}<br>
+    Authenticated: {{ user.is_authenticated }}<br>
+    Logout URL: {% url 'users:logout' %}
+</div>
+
+<nav class="navbar navbar-expand navbar-light bg-light-yellow shadow-sm">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'mailing_service:base' %}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor"
+                 class="bi bi-envelope-check me-2" viewBox="0 0 16 16">
+                <path d="M2 2a2 2 0 0 0-2 2v8.01A2 2 0 0 0 2 14h5.5a.5.5 0 0 0 0-1H2a1 1 0 0 1-.966-.741l5.64-3.471L8 9.583l7-4.2V8.5a.5.5 0 0 0 1 0V4a2 2 0 0 0-2-2H2Zm3.708 6.208L1 11.105V5.383l4.708 2.825ZM1 4.217V4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v.217l-7 4.2-7-4.2Z"/>
+                <path d="M16 12.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Zm-1.993-1.679a.5.5 0 0 0-.686.172l-1.17 1.95-.547-.547a.5.5 0 0 0-.708.708l.774.773a.75.75 0 0 0 1.174-.144l1.335-2.226a.5.5 0 0 0-.172-.686Z"/>
+            </svg>
+            MailingService
+        </a>
+
+        <!-- Основные ссылки навигации -->
+        <div class="navbar-nav">
+            <a class="nav-link active" href="{% url 'mailing_service:base' %}">Главная</a>
+            <a class="nav-link" href="{% url 'mailing_service:mailing_list' %}">Рассылки</a>
+            <a class="nav-link" href="{% url 'mailing_service:recipient_list' %}">Получатели</a>
+            <a class="nav-link" href="{% url 'mailing_service:message_list' %}">Сообщения</a>
+            <a class="nav-link" href="{% url 'mailing_service:mailing_log_list' %}">Статистика</a>
+        </div>
+
+        <!-- Кнопки входа/выхода - выровнены по правому краю -->
+        <div class="navbar-nav ms-auto">
+            {% if user.is_authenticated %}
+                <form action="{% url 'users:logout' %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-dark me-2">Выход</button>
+                </form>
+                <a href="{% url 'users:edit_profile' %}" class="btn btn-sm btn-mint">Профиль</a>
+            {% else %}
+                <a href="{% url 'users:login' %}" class="btn btn-sm btn-mint me-2">Войти</a>
+                <a href="{% url 'users:register' %}" class="btn btn-sm btn-outline-dark">Регистрация</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>

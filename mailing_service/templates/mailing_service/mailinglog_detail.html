@@ -1,0 +1,129 @@
+{% extends 'mailing_service/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="card shadow">
+        <div class="card-header {% if object.status == 'success' %}bg-success{% else %}bg-danger{% endif %} text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">Детали лога рассылки #{{ object.id }}</h2>
+                <span class="badge bg-{% if object.status == 'success' %}light text-dark{% else %}dark{% endif %}">
+                    {{ object.get_status_display }}
+                </span>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h5 class="border-bottom pb-2">Основная информация</h5>
+                    <dl class="row">
+                        <dt class="col-sm-4">Дата попытки:</dt>
+                        <dd class="col-sm-8">{{ object.date_of_attempt|date:"d.m.Y H:i" }}</dd>
+                        
+                        <dt class="col-sm-4">Рассылка:</dt>
+                        <dd class="col-sm-8">
+                            <a href="{% url 'mailing_service:mailing_detail' object.mailing.id %}" 
+                               class="text-decoration-none">
+                                #{{ object.mailing.id }} ({{ object.mailing.message.subject_message|truncatechars:30 }})
+                            </a>
+                        </dd>
+                        
+                        <dt class="col-sm-4">Статус рассылки:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-{% if object.mailing.status == 'LAUNCHED' %}success{% else %}secondary{% endif %}">
+                                {{ object.mailing.get_status_display }}
+                            </span>
+                        </dd>
+                    </dl>
+                </div>
+                
+                <div class="col-md-6">
+                    <h5 class="border-bottom pb-2">Информация о получателе</h5>
+                    <dl class="row">
+                        <dt class="col-sm-4">Получатель:</dt>
+                        <dd class="col-sm-8">
+                            {% if object.recipient %}
+                                <a href="{% url 'mailing_service:recipient_detail' object.recipient.id %}" 
+                                   class="text-decoration-none">
+                                    {{ object.recipient.full_name }} &lt;{{ object.recipient.email }}&gt;
+                                </a>
+                            {% else %}
+                                <span class="text-muted">Получатель удалён</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-4">Владелец:</dt>
+                        <dd class="col-sm-8">
+                            {{ object.mailing.owner.get_full_name|default:object.mailing.owner.username }}
+                        </dd>
+                        
+                        <dt class="col-sm-4">Дата создания:</dt>
+                        <dd class="col-sm-8">
+                            {{ object.mailing.created_at|date:"d.m.Y H:i" }}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <h5 class="border-bottom pb-2">Детали отправки</h5>
+                <div class="card bg-light">
+                    <div class="card-header">
+                        <strong>Ответ почтового сервера:</strong>
+                    </div>
+                    <div class="card-body">
+                        <pre class="mb-0" style="white-space: pre-wrap; word-wrap: break-word; font-family: monospace;">{{ object.mail_server_response }}</pre>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <div>
+                    <a href="{% url 'mailing_service:mailing_log_list' %}" 
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Назад к списку логов
+                    </a>
+                </div>
+                <div>
+                    <a href="{% url 'mailing_service:mailing_detail' object.mailing.id %}" 
+                       class="btn btn-mint">
+                        <i class="bi bi-envelope"></i> К деталям рассылки
+                    </a>
+                    {% if perms.mailing.can_delete_logs %}
+                    <a href="#" class="btn btn-danger ms-2" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                        <i class="bi bi-trash"></i> Удалить лог
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal для удаления -->
+{% if perms.mailing.can_delete_logs %}
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить этот лог рассылки? Это действие нельзя отменить.</p>
+                <p class="fw-bold">Лог #{{ object.id }} от {{ object.date_of_attempt|date:"d.m.Y H:i" }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <form method="post" action="#">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

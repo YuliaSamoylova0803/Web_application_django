@@ -1,0 +1,117 @@
+{% extends 'mailing_service/base.html' %}
+{% load my_tags %}
+
+{% block content %}
+<div class="album py-5 bg-body-tertiary">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h4 class="my-0 font-weight-normal">Детали рассылки #{{ mailing.id }}</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <h5>Основная информация</h5>
+                            <ul class="list-unstyled">
+                                <li><strong>Первая отправка:</strong> {{ mailing.first_shipment }}</li>
+                                <li><strong>Окончание отправки:</strong> {{ mailing.end_shipment }}</li>
+                                <li><strong>Статус:</strong>
+                                    <span class="badge
+                                        {% if mailing.status == mailing.STATUS_LAUNCHED %}bg-success
+                                        {% elif mailing.status == mailing.STATUS_COMPLETED %}bg-secondary
+                                        {% else %}bg-primary{% endif %}">
+                                        {{ mailing.get_status_display }}
+                                    </span>
+                                </li>
+                                <li><strong>Активна:</strong> {% if mailing.is_active %}Да{% else %}Нет{% endif %}</li>
+                            </ul>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5>Сообщение</h5>
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-subtitle mb-2 text-muted">{{ mailing.message.subject_message }}</h6>
+                                    <p class="card-text">{{ mailing.message.message_body }}</p>
+                                    {% if mailing.message.attachment %}
+                                    <p class="card-text">
+                                        <small class="text-muted">Вложение: {{ mailing.message.attachment.name|filename }}</small>
+                                    </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h5>Получатели ({{ mailing.recipients.count }})</h5>
+                            <ul class="list-group">
+                                {% for recipient in mailing.recipients.all %}
+                                <li class="list-group-item">{{ recipient.full_name }} &lt;{{ recipient.email }}&gt;</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+
+                        {% if object.status != object.STATUS_COMPLETED %}
+                        <div class="mb-4 text-center">
+                            <form method="post" action="{% url 'mailing_service:send_mailing' mailing_id=object.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-lg btn-mint">Отправить сейчас</button>
+                            </form>
+                        </div>
+                        {% endif %}
+
+                        <div class="mt-4">
+                            <h5>История отправок</h5>
+                            {% if logs %}
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Дата попытки</th>
+                                            <th>Получатель</th>
+                                            <th>Статус</th>
+                                            <th>Ответ сервера</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for log in logs %}
+                                        <tr>
+                                            <td>{{ log.date_of_attempt }}</td>
+                                            <td>{{ log.recipient.email }}</td>
+                                            <td>
+                                                <span class="badge {% if log.status == log.STATUS_SUCCESS %}bg-success{% else %}bg-danger{% endif %}">
+                                                    {{ log.get_status_display }}
+                                                </span>
+                                            </td>
+                                            <td>{{ log.mail_server_response|truncatechars:50 }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info">Нет данных об отправках</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'mailing_service:mailing_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi btn-outline-dark me-2"></i> Назад к списку
+                            </a>
+                            <div class="btn-group">
+                                <a href="{% url 'mailing_service:mailing_update' pk=object.pk  %}" class="btn btn-mint">
+                                    <i class="bi bi-pencil"></i> Редактировать
+                                </a>
+                                <a href="{% url 'mailing_service:mailing_delete' pk=object.pk  %}" class="btn btn-outline-danger">
+                                    <i class="bi bi-trash"></i> Удалить
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
